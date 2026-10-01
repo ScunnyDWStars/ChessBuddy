@@ -66,7 +66,13 @@ export function LoadView({
       setRemote(games);
       if (games.length === 0) setFetchError('No standard games found for this player.');
     } catch (e) {
-      setFetchError(`${(e as Error).message} Check the username, or paste the PGN instead.`);
+      const site = source === 'chess.com' ? 'Chess.com' : 'Lichess';
+      // A network/CSP block surfaces as a TypeError ("Failed to fetch").
+      setFetchError(
+        e instanceof TypeError
+          ? `Couldn't reach ${site} from this page. Open the game on ${site}, choose Share → PGN, copy it and paste it above.`
+          : `${(e as Error).message} Check the username, or paste the PGN instead.`,
+      );
     } finally {
       setFetching(false);
     }
