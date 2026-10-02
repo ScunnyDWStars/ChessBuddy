@@ -12,38 +12,27 @@ export function winProbFor(score: Score, color: Color): number {
   return color === 'w' ? w : 1 - w;
 }
 
-/** Lichess per-move accuracy from win percentages (0..100) before/after. */
+/**
+ * Per-move accuracy (0..100) from the mover's win probability before/after.
+ * Lichess' curve shape, with a steeper decay calibrated against Chess.com
+ * reviews: a "good" move (≈3% lost) scores ≈63 and an "excellent" one ≈86.
+ */
+export const ACCURACY_DECAY = 0.155;
+
 export function moveAccuracy(winBefore: number, winAfter: number): number {
   const drop = Math.max(0, (winBefore - winAfter) * 100);
-  const raw = 103.1668 * Math.exp(-0.04354 * drop) - 3.1669 + 1;
+  const raw = 103.1668 * Math.exp(-ACCURACY_DECAY * drop) - 3.1669 + 1;
   return Math.max(0, Math.min(100, raw));
 }
 
-function stdDev(xs: number[]): number {
-  const mean = xs.reduce((a, b) => a + b, 0) / xs.length;
-  return Math.sqrt(xs.reduce((a, b) => a + (b - mean) ** 2, 0) / xs.length);
-}
-
 /**
- * Game accuracy for one side, following lichess: the mean of a
- * volatility-weighted average and a harmonic mean of per-move accuracies.
- * `whiteWins` are White win probabilities for every position of the game
- * (initial position included), `accuracies` are per-move accuracies for the
- * side, `plyIdx` the index of each of those moves in the game.
+ * Game (or phase) accuracy: the plain average of per-move accuracies. Unlike
+ * lichess' harmonic blend, one blunder doesn't sink an otherwise good game,
+ * which matches how Chess.com's numbers behave.
  */
-export function gameAccuracy(whiteWins: number[], accuracies: number[], plyIdx: number[]): number {
+export function gameAccuracy(accuracies: number[]): number {
   if (accuracies.length === 0) return 0;
-  const n = whiteWins.length;
-  const window = Math.max(2, Math.min(8, Math.floor(n / 10)));
-  const weights = plyIdx.map((i) => {
-    const start = Math.max(0, Math.min(i, n - window));
-    const slice = whiteWins.slice(start, start + window).map((w) => w * 100);
-    return Math.max(0.5, Math.min(12, stdDev(slice)));
-  });
-  const wSum = weights.reduce((a, b) => a + b, 0);
-  const weighted = accuracies.reduce((a, acc, i) => a + acc * weights[i], 0) / wSum;
-  const harmonic = accuracies.length / accuracies.reduce((a, acc) => a + 1 / Math.max(acc, 1), 0);
-  return (weighted + harmonic) / 2;
+  return accuracies.reduce((a, b) => a + b, 0) / accuracies.length;
 }
 
 const RATING_CURVE: [number, number][] = [

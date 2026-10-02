@@ -13,7 +13,7 @@ const INDEX_KEY = 'chessbuddy:recent';
 const REVIEW_PREFIX = 'chessbuddy:review:';
 const MAX_RECENT = 6;
 // Bump when the analysis output changes shape so stale caches are ignored.
-const VERSION = 1;
+const VERSION = 2;
 
 function hash(text: string): string {
   let h = 2166136261;

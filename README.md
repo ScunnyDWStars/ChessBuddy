@@ -56,7 +56,7 @@ Use the **⇄ switch** in the panel header to review either player. Keyboard sho
    - **Brilliant**: a sound sacrifice. After the move, a piece can be won by static exchange, yet the move is still best or near-best and the position stays good.
    - **Great**: the only good move (the second-best move is at least 0.15 worse), or the move that punishes an opponent's blunder. Recaptures and moves that deliver mate don't count.
    - **Miss**: the opponent gave you a chance (they blundered, or material or mate was available) and the move lets it slip without making your position worse than before their error.
-4. **Accuracy** uses lichess' per-move formula and the volatility-weighted/harmonic game mean. The **game rating** is a rough mapping from accuracy, so treat it as an estimate.
+4. **Accuracy** follows the shape of lichess' per-move formula, but with a steeper decay (`ACCURACY_DECAY`), and the game accuracy is the plain average of the move scores. Both were calibrated against Chess.com's own Game Review of a real game (`tests/calibration.test.ts`): ChessBuddy gives 80.5 / 78.0 where Chess.com gives 80.6 / 76.0. The **game rating** is a rough mapping from accuracy, so treat it as an estimate.
 5. Explanations come from static exchange evaluation (hanging pieces), material swings along the engine's principal variations, and mate detection.
 
 Finished reviews are cached in `localStorage`, so reopening a recent game is instant.

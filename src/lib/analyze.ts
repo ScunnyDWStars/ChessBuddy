@@ -17,7 +17,7 @@ import { classifyMove } from './classify';
 import { buildFeedback } from './feedback';
 import { buildInsights } from './insights';
 import { lookupOpening, type OpeningBook } from './openings';
-import { estimateRating, gameAccuracy, whiteWinProb } from './scoring';
+import { estimateRating, gameAccuracy } from './scoring';
 import { PIECE_VALUE, hangingPieces, materialSwing, phaseOf, uciLineToSan, uciToSan } from './chessUtils';
 
 export const CLASSIFICATIONS: Classification[] = [
@@ -75,8 +75,6 @@ async function evaluatePositions(fens: string[], analyzer: Analyzer, opts: Analy
 
 const emptyCounts = (): ClassCounts =>
   Object.fromEntries(CLASSIFICATIONS.map((c) => [c, 0])) as ClassCounts;
-
-const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
 function mateFor(score: Score, color: Color): number | undefined {
   if (score.mate === undefined || score.mate === 0) return undefined;
@@ -189,22 +187,14 @@ export function buildReview(game: ParsedGame, evals: PositionEval[], book: Openi
     });
   });
 
-  const whiteWins = evals.map((e) => whiteWinProb(e.score));
   const summarize = (color: Color): SideSummary => {
-    const mine = moves.map((m, i) => ({ m, i })).filter(({ m }) => m.color === color);
+    const mine = moves.filter((m) => m.color === color);
     const counts = emptyCounts();
-    mine.forEach(({ m }) => counts[m.classification]++);
-    const accuracy = gameAccuracy(
-      whiteWins,
-      mine.map(({ m }) => m.accuracy),
-      mine.map(({ i }) => i),
-    );
+    mine.forEach((m) => counts[m.classification]++);
+    const accuracy = gameAccuracy(mine.map((m) => m.accuracy));
     const phaseAcc = (p: Phase) => {
-      const ms = mine.filter(({ m }) => m.phase === p).map(({ m }) => m.accuracy);
-      if (!ms.length) return null;
-      // Same blend as the game accuracy (mean + harmonic mean) so the numbers agree.
-      const harmonic = ms.length / ms.reduce((a, acc) => a + 1 / Math.max(acc, 1), 0);
-      return (mean(ms) + harmonic) / 2;
+      const ms = mine.filter((m) => m.phase === p).map((m) => m.accuracy);
+      return ms.length ? gameAccuracy(ms) : null;
     };
     return {
       accuracy,

@@ -17,16 +17,16 @@ describe('win probability', () => {
 describe('accuracy', () => {
   it('gives ~100 for no loss and drops with larger losses', () => {
     expect(moveAccuracy(0.6, 0.6)).toBe(100);
-    expect(moveAccuracy(0.6, 0.5)).toBeLessThan(70);
-    expect(moveAccuracy(0.9, 0.1)).toBeLessThan(5);
+    // Calibrated against Chess.com: excellent ≈ 86, good ≈ 63, mistakes near zero.
+    expect(moveAccuracy(0.5, 0.49)).toBeCloseTo(86.2, 0);
+    expect(moveAccuracy(0.5, 0.47)).toBeCloseTo(62.6, 0);
+    expect(moveAccuracy(0.6, 0.45)).toBeLessThan(10);
   });
 
-  it('game accuracy is pulled down by a single blunder', () => {
-    const wins = [0.5, 0.5, 0.5, 0.5, 0.5, 0.1, 0.1];
-    const clean = gameAccuracy(wins, [100, 100, 100], [0, 2, 4]);
-    const blunder = gameAccuracy(wins, [100, 100, 5], [0, 2, 4]);
-    expect(clean).toBeCloseTo(100);
-    expect(blunder).toBeLessThan(60);
+  it('game accuracy is the average of move accuracies', () => {
+    expect(gameAccuracy([100, 100, 100])).toBeCloseTo(100);
+    expect(gameAccuracy([100, 100, 4])).toBeCloseTo(68);
+    expect(gameAccuracy([])).toBe(0);
   });
 
   it('maps accuracy to an increasing rating estimate', () => {

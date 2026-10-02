@@ -114,10 +114,10 @@ export function buildInsights(
   // 6. Phase weaknesses.
   const phaseMoves = (p: AnalyzedMove['phase']) => mine.filter((m) => m.phase === p);
   const { opening, middlegame, endgame } = summary.phases;
-  if (endgame !== null && endgame < 75 && phaseMoves('endgame').length >= 5) {
+  if (endgame !== null && endgame < 70 && phaseMoves('endgame').length >= 5) {
     out.push({
       id: 'endgame',
-      severity: endgame < 60 ? 'high' : 'medium',
+      severity: endgame < 55 ? 'high' : 'medium',
       title: 'Your endgame technique needs work',
       detail: `Endgame accuracy was ${Math.round(endgame)}%. Many games are decided in the ending, and precise technique converts small edges.`,
       practice:
@@ -125,7 +125,7 @@ export function buildInsights(
       plies: phaseMoves('endgame').filter((m) => ERRORS.has(m.classification) || m.classification === 'inaccuracy').map((m) => m.ply),
     });
   }
-  if (middlegame !== null && middlegame < 70 && phaseMoves('middlegame').length >= 6 && !hung.length) {
+  if (middlegame !== null && middlegame < 65 && phaseMoves('middlegame').length >= 6 && !hung.length) {
     out.push({
       id: 'middlegame',
       severity: 'medium',
@@ -148,7 +148,7 @@ export function buildInsights(
   if (queenEarly >= 2) habits.push('brought the queen out early');
   if (!castled && mine.length >= 15) habits.push('never castled');
   else if (castled && castled.moveNumber > 12) habits.push(`castled late (move ${castled.moveNumber})`);
-  const weakOpening = opening !== null && opening < 80;
+  const weakOpening = opening !== null && opening < 75;
   if (weakOpening || habits.length || openingErrors.length >= 2) {
     const accText =
       opening === null ? '' : weakOpening ? `Opening accuracy was only ${Math.round(opening)}%. ` : `Your opening moves were accurate (${Math.round(opening)}%), but `;
@@ -176,7 +176,7 @@ export function buildInsights(
       plies: great.map((m) => m.ply),
     });
   }
-  if (errors.length === 0 && summary.accuracy >= 80) {
+  if (errors.length === 0 && summary.accuracy >= 75) {
     out.push({
       id: 'clean',
       severity: 'positive',

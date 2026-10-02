@@ -20,11 +20,11 @@ const TABLE_ROWS: Classification[] = [
 function phaseIcon(acc: number | null, allBook: boolean): Classification | null {
   if (acc === null) return null;
   if (allBook) return 'book';
-  if (acc >= 97) return 'best';
-  if (acc >= 90) return 'excellent';
-  if (acc >= 80) return 'good';
-  if (acc >= 65) return 'inaccuracy';
-  if (acc >= 50) return 'mistake';
+  if (acc >= 95) return 'best';
+  if (acc >= 85) return 'excellent';
+  if (acc >= 72) return 'good';
+  if (acc >= 60) return 'inaccuracy';
+  if (acc >= 45) return 'mistake';
   return 'blunder';
 }
 
@@ -36,8 +36,8 @@ export function summaryMessage(review: GameReview, color: Color): string {
   const errors = s.counts.blunder + s.counts.mistake + s.counts.miss;
   const opening = review.opening ? `The ${review.opening.name}. ` : '';
   let verdict: string;
-  if (acc >= 90) verdict = `Excellent play — **${acc}%** accuracy!`;
-  else if (acc >= 80) verdict = `A solid game with **${acc}%** accuracy.`;
+  if (acc >= 88) verdict = `Excellent play — **${acc}%** accuracy!`;
+  else if (acc >= 78) verdict = `A solid game with **${acc}%** accuracy.`;
   else if (acc >= 65) verdict = `You played with **${acc}%** accuracy — there's room to grow.`;
   else verdict = `A tough one: **${acc}%** accuracy.`;
   const errText =
