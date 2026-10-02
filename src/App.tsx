@@ -16,6 +16,7 @@ import { MoveReviewView, RETRYABLE, type RetryState } from './components/MoveRev
 import { InsightsView } from './components/InsightsView';
 import { LoadView } from './components/LoadView';
 import { MoveList } from './components/MoveList';
+import { takeExtensionImport } from './lib/extensionBridge';
 
 type Tab = 'review' | 'insights' | 'load';
 
@@ -88,7 +89,7 @@ export default function App() {
   }, []);
 
   const loadGame = useCallback(
-    (pgn: string, username?: string) => {
+    (pgn: string, username?: string | string[], perspectiveHint?: Color) => {
       let parsed: ParsedGame;
       try {
         parsed = parsePgn(pgn);
@@ -96,8 +97,14 @@ export default function App() {
         setError((e as Error).message);
         return;
       }
-      const user = username?.trim().toLowerCase();
-      const side: Color = user && parsed.headers.black.toLowerCase() === user ? 'b' : 'w';
+      // Review from the side of whichever player matches a known username,
+      // else from the side the board was oriented to on the source site.
+      const users = (Array.isArray(username) ? username : username ? [username] : []).map((u) => u.trim().toLowerCase());
+      const side: Color = users.includes(parsed.headers.black.toLowerCase())
+        ? 'b'
+        : users.includes(parsed.headers.white.toLowerCase())
+          ? 'w'
+          : (perspectiveHint ?? 'w');
       setGame(parsed);
       setPerspective(side);
       setFlipped(false);
@@ -119,6 +126,21 @@ export default function App() {
     },
     [depth, runAnalysis],
   );
+
+  // A game sent from Chess.com / Lichess by the browser extension.
+  useEffect(() => {
+    const pickUp = () => {
+      takeExtensionImport()
+        .then((incoming) => incoming && loadGame(incoming.pgn, incoming.usernames, incoming.perspective))
+        .catch((e: Error) => {
+          setError(`Couldn't open the game from the extension: ${e.message}`);
+          setTab('load');
+        });
+    };
+    pickUp();
+    window.addEventListener('hashchange', pickUp);
+    return () => window.removeEventListener('hashchange', pickUp);
+  }, []);
 
   const openRecent = (r: RecentReview) => {
     const cached = loadReview(r.key);

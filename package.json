@@ -10,9 +10,11 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "build:openings": "node scripts/build-openings.mjs"
+    "build:openings": "node scripts/build-openings.mjs",
+    "build:extension": "node scripts/build-extension.mjs"
   },
   "dependencies": {
+    "chess-tcn": "^1.1.1",
     "chess.js": "^1.4.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

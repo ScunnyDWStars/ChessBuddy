@@ -25,6 +25,7 @@ Other scripts:
 | `npm run preview` | Serves the production build |
 | `npm test` | Unit tests plus an integration test that runs the real Stockfish WASM build over sample games |
 | `npm run typecheck` | TypeScript only |
+| `npm run build:extension` | Builds the browser extension into `dist-extension/` (add `-- --zip` for a zip file) |
 | `npm run build:openings` | Regenerates `src/data/openings.json` from `scripts/openings-src/*.tsv` |
 
 ### Loading games
@@ -34,6 +35,24 @@ Other scripts:
 - **Sample games**: a club blitz game full of instructive errors, Morphy's Opera Game and the Immortal Game.
 
 Use the **⇄ switch** in the panel header to review either player. Keyboard shortcuts: `←` `→` step through moves, `Home`/`End` jump to the start or end, `F` flips the board.
+
+## Browser extension (Chrome, Edge, Brave)
+
+The extension adds a **Review with ChessBuddy** button to Chess.com and Lichess game pages. When a game ends, the button pulses. Clicking it collects the finished game straight from the site and opens the full review in a new tab, so you don't need to download a PGN. You can also have the review open automatically when a game ends (an option in the toolbar popup).
+
+**Install**
+1. Build it with `npm run build:extension -- --zip`, or use a provided `chessbuddy-extension.zip`, and unzip it into a folder.
+2. Open `chrome://extensions` (or `edge://extensions`) and turn on **Developer mode**.
+3. Click **Load unpacked** and select the unzipped folder.
+4. Click the ChessBuddy icon in the toolbar and enter your Chess.com and/or Lichess username, so games are reviewed from your side.
+
+**How it collects games**
+- **Chess.com:** the game data Chess.com's own board uses (`/callback/{live|daily}/game/{id}`). It is available as soon as the game ends and includes clock times. The move list is decoded with [chess-tcn](https://github.com/chess-tcn/chess-tcn-js). If that fails, the extension falls back to the public API archive (which can lag a few minutes behind), and then to reading the move list on the page.
+- **Lichess:** the official export endpoint (`/game/export/{id}`).
+
+Everything runs locally. The game is passed to the review tab through the browser's session storage and is never sent anywhere else.
+
+Source: `extension/` (manifest, content script, background worker, popup) and `src/lib/chesscom.ts` / `src/lib/extensionBridge.ts`.
 
 ## How the analysis works
 
@@ -87,5 +106,6 @@ tests/           vitest suites (including a Node harness for the WASM engine)
 - Piece set "cburnett" by Colin M.L. Burnett: CC BY-SA 3.0 / GPLv2+, via [lichess](https://github.com/lichess-org/lila).
 - Opening names from [lichess-org/chess-openings](https://github.com/lichess-org/chess-openings): CC0.
 - [chess.js](https://github.com/jhlywa/chess.js): BSD-2-Clause.
+- [chess-tcn](https://github.com/chess-tcn/chess-tcn-js): MIT.
 
 ChessBuddy is not affiliated with Chess.com. The interface takes its look from Chess.com's review screen, but all code, icons and artwork here are original or openly licensed.

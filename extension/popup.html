@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ChessBuddy</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <img src="icons/icon-48.png" alt="" />
+      <h1>Chess<b>Buddy</b></h1>
+    </header>
+
+    <button id="review" class="primary" type="button">Review this game</button>
+    <p id="status" class="status" role="status"></p>
+
+    <section>
+      <h2>Your usernames</h2>
+      <p class="hint">Used to review the game from your side.</p>
+      <label for="chesscomUser">Chess.com</label>
+      <input id="chesscomUser" autocomplete="off" spellcheck="false" placeholder="e.g. ChessManDan1888" />
+      <label for="lichessUser">Lichess</label>
+      <input id="lichessUser" autocomplete="off" spellcheck="false" placeholder="optional" />
+    </section>
+
+    <section>
+      <label class="toggle">
+        <input id="autoOpen" type="checkbox" />
+        <span>Open the review automatically when a game ends</span>
+      </label>
+    </section>
+
+    <button id="open" class="secondary" type="button">Open ChessBuddy (paste a PGN)</button>
+    <script src="popup.js"></script>
+  </body>
+</html>
