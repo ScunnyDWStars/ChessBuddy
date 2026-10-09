@@ -647,6 +647,8 @@ export default function App() {
             onStart={() => {
               setStarted(true);
               selectPly(0);
+              // On phones, bring the board back into view for the move-by-move review.
+              if (window.matchMedia('(max-width: 860px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           />
         )}

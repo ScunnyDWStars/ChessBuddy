@@ -1921,3 +1921,43 @@ strong {
     display: none !important;
   }
 }
+
+/* ---------- Phones: keep the main controls on screen ----------
+   The review's Next/Previous buttons (and Start Review / Next puzzle) are
+   pinned to the bottom of the screen so the board stays visible above them. */
+@media (max-width: 860px) {
+  .panel-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid #1d1c1a;
+    box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.45);
+  }
+  /* Leave room so the pinned bar never covers the end of the page. */
+  .panel:has(.panel-footer) {
+    margin-bottom: calc(118px + env(safe-area-inset-bottom, 0px));
+  }
+  .review-footer {
+    gap: 4px;
+  }
+  .key-nav .btn-ghost {
+    padding: 2px 6px;
+    font-size: 12px;
+  }
+  .nav-row {
+    grid-template-columns: 44px 44px 1fr 44px 44px;
+  }
+  .nav-btn {
+    height: 46px;
+  }
+  .nav-next {
+    font-size: 18px;
+  }
+  .panel-footer .btn-xl {
+    font-size: 19px;
+    padding: 12px;
+  }
+}
