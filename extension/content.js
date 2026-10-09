@@ -13,9 +13,9 @@
     'insights', 'broadcast', 'puzzle', 'storm', 'racer', 'streak', 'editor', 'paste', 'player',
   ]);
   const notified = new Set();
-  let settings = { autoOpen: false, chesscomUser: '', lichessUser: '' };
+  let settings = { autoOpen: false, autoSave: false, chesscomUser: '', lichessUser: '' };
 
-  chrome.storage.sync.get(['autoOpen', 'chesscomUser', 'lichessUser']).then((s) => {
+  chrome.storage.sync.get(['autoOpen', 'autoSave', 'chesscomUser', 'lichessUser']).then((s) => {
     settings = { ...settings, ...s };
   });
   chrome.storage.onChanged.addListener((changes) => {
@@ -141,6 +141,14 @@
     return { kind: 'pgn', data: pgn };
   }
 
+  async function collect(game) {
+    const payload = SITE === 'lichess' ? await collectLichess(game) : await collectChessCom(game);
+    payload.perspective = boardPerspective();
+    payload.url = location.href;
+    payload.gameId = `${SITE}:${game.id}`;
+    return payload;
+  }
+
   async function reviewCurrentGame() {
     const game = currentGame();
     if (!game) {
@@ -149,9 +157,7 @@
     }
     setBusy(true);
     try {
-      const payload = SITE === 'lichess' ? await collectLichess(game) : await collectChessCom(game);
-      payload.perspective = boardPerspective();
-      payload.url = location.href;
+      const payload = await collect(game);
       const res = await chrome.runtime.sendMessage({ type: 'chessbuddy:review', payload });
       if (!res || !res.ok) throw new Error('The extension could not open the review.');
       hideToast();
@@ -159,6 +165,17 @@
       toast(e.message || String(e));
     } finally {
       setBusy(false);
+    }
+  }
+
+  /** Auto-save: hand the finished game to the extension's queue without opening a tab. */
+  async function saveCurrentGame(game) {
+    try {
+      const payload = await collect(game);
+      const res = await chrome.runtime.sendMessage({ type: 'chessbuddy:queue', payload });
+      if (res && res.ok) toast(`Saved to ChessBuddy (${res.count} waiting). Open ChessBuddy to see your progress.`);
+    } catch (e) {
+      toast(`Couldn't save this game: ${e.message || e}`);
     }
   }
 
@@ -203,6 +220,7 @@
       notified.add(game.id);
       btn.classList.add('cb-pulse');
       if (settings.autoOpen) reviewCurrentGame();
+      else if (settings.autoSave) saveCurrentGame(game);
     }
   }
 

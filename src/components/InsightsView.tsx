@@ -11,7 +11,7 @@ const SEVERITY_LABEL: Record<Insight['severity'], string> = {
   positive: 'Keep it up',
 };
 
-function PhaseBar({ label, value }: { label: string; value: number | null }) {
+export function PhaseBar({ label, value }: { label: string; value: number | null }) {
   if (value === null) return null;
   const v = Math.round(value);
   const color = v >= 85 ? CLASS_COLOR.best : v >= 70 ? CLASS_COLOR.good : v >= 55 ? CLASS_COLOR.inaccuracy : CLASS_COLOR.blunder;

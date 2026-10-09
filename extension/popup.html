@@ -24,13 +24,19 @@
     </section>
 
     <section>
+      <h2>When a game ends</h2>
+      <label class="toggle">
+        <input id="autoSave" type="checkbox" />
+        <span>Save it to ChessBuddy automatically (analysed next time ChessBuddy is open)</span>
+      </label>
       <label class="toggle">
         <input id="autoOpen" type="checkbox" />
-        <span>Open the review automatically when a game ends</span>
+        <span>Open the review straight away</span>
       </label>
+      <p id="queued" class="hint"></p>
     </section>
 
-    <button id="open" class="secondary" type="button">Open ChessBuddy (paste a PGN)</button>
+    <button id="open" class="secondary" type="button">Open ChessBuddy</button>
     <script src="popup.js"></script>
   </body>
 </html>

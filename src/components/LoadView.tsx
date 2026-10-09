@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SAMPLE_GAMES } from '../data/samples';
 import { fetchChessComGames, fetchLichessGames, type RemoteGame } from '../lib/importers';
 import { splitPgn, parsePgn } from '../lib/pgn';
-import type { RecentReview } from '../lib/storage';
+import { localUsernames, setLocalUsernames, type GameRecord } from '../lib/library';
 import { CoachAvatar } from './common';
 
 export const DEPTHS = [
@@ -24,6 +24,7 @@ export function LoadView({
   depth,
   onDepth,
   onLoad,
+  onLoadSample,
   recent,
   onOpenRecent,
   error,
@@ -31,10 +32,14 @@ export function LoadView({
   depth: number;
   onDepth: (d: number) => void;
   onLoad: (pgn: string, username?: string) => void;
-  recent: RecentReview[];
-  onOpenRecent: (r: RecentReview) => void;
+  /** Sample games are reviewed but not added to your library. */
+  onLoadSample: (pgn: string, username?: string) => void;
+  /** Your most recent saved games, newest first. */
+  recent: GameRecord[];
+  onOpenRecent: (key: string) => void;
   error: string | null;
 }) {
+  const [myNames, setMyNames] = useState(() => localUsernames().join(', '));
   const [text, setText] = useState('');
   const [choices, setChoices] = useState<string[] | null>(null);
   const [source, setSource] = useState<'chess.com' | 'lichess'>('chess.com');
@@ -190,18 +195,36 @@ export function LoadView({
             </div>
           </section>
 
+          <section className="card">
+            <h3>
+              <label htmlFor="my-usernames">Your usernames</label>
+            </h3>
+            <p className="muted small card-hint">
+              So ChessBuddy knows which side you played and can track your progress. Separate several with commas.
+            </p>
+            <input
+              id="my-usernames"
+              className="text-input full"
+              placeholder="e.g. ChessManDan1888"
+              value={myNames}
+              onChange={(e) => setMyNames(e.target.value)}
+              onBlur={() => setLocalUsernames(myNames)}
+            />
+          </section>
+
           {recent.length > 0 && (
             <section className="card">
               <h3>Recent reviews</h3>
               <div className="game-list">
                 {recent.map((r) => (
-                  <button key={r.key} className="game-item" onClick={() => onOpenRecent(r)}>
+                  <button key={r.key} className="game-item" onClick={() => onOpenRecent(r.key)}>
+                    <span className={`result-dot ${r.outcome === 'unknown' ? 'draw' : r.outcome}`} title={r.outcome} />
                     <span className="gi-players">
                       <span>
                         {r.white} vs {r.black}
                       </span>
                       <em>
-                        {r.result} · accuracy {r.accuracy[0].toFixed(0)} / {r.accuracy[1].toFixed(0)}
+                        {r.result} · your accuracy {r.accuracy.toFixed(1)}
                       </em>
                     </span>
                   </button>
@@ -212,9 +235,10 @@ export function LoadView({
 
           <section className="card">
             <h3>Try a sample game</h3>
+            <p className="muted small card-hint">Samples are not added to your progress or puzzles.</p>
             <div className="game-list">
               {SAMPLE_GAMES.map((s) => (
-                <button key={s.id} className="game-item" onClick={() => onLoad(s.pgn, s.id === 'club-blitz' ? 'You' : undefined)}>
+                <button key={s.id} className="game-item" onClick={() => onLoadSample(s.pgn, s.id === 'club-blitz' ? 'You' : undefined)}>
                   <span className="gi-players">
                     <span>{s.title}</span>
                     <em>{s.subtitle}</em>

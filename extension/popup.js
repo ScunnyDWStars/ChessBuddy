@@ -2,18 +2,25 @@ const fields = ['chesscomUser', 'lichessUser'];
 const $ = (id) => document.getElementById(id);
 const status = (text) => ($('status').textContent = text);
 
-chrome.storage.sync.get([...fields, 'autoOpen']).then((s) => {
+const toggles = ['autoOpen', 'autoSave'];
+
+chrome.storage.sync.get([...fields, ...toggles]).then((s) => {
   for (const f of fields) $(f).value = s[f] || '';
-  $('autoOpen').checked = !!s.autoOpen;
+  for (const t of toggles) $(t).checked = !!s[t];
+});
+
+chrome.storage.local.get('pendingGames').then(({ pendingGames }) => {
+  const n = (pendingGames || []).length;
+  if (n) $('queued').textContent = `${n} saved game${n === 1 ? '' : 's'} waiting. Open ChessBuddy to analyse ${n === 1 ? 'it' : 'them'}.`;
 });
 
 for (const f of fields) {
   $(f).addEventListener('change', () => chrome.storage.sync.set({ [f]: $(f).value.trim() }));
 }
-$('autoOpen').addEventListener('change', () => chrome.storage.sync.set({ autoOpen: $('autoOpen').checked }));
+for (const t of toggles) $(t).addEventListener('change', () => chrome.storage.sync.set({ [t]: $(t).checked }));
 
 $('open').addEventListener('click', () => {
-  chrome.tabs.create({ url: chrome.runtime.getURL('review.html') });
+  chrome.tabs.create({ url: chrome.runtime.getURL('review.html#progress') });
   window.close();
 });
 

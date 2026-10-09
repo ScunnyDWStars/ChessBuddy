@@ -91,6 +91,10 @@ button:focus-visible {
   outline-offset: 1px;
 }
 
+.toggle + .toggle {
+  margin-top: 6px;
+}
+
 .toggle {
   display: flex;
   gap: 8px;

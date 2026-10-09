@@ -8,6 +8,9 @@ An engine-powered chess game review in the style of chess.com's **Game Review**.
 - **Retry**: on any inaccuracy, mistake, miss or blunder, try to find a better move on the board. The engine checks your attempt.
 - **Insights / improvement plan**: recurring problems that cost rating points (hanging pieces, missed tactics, king safety, time trouble, converting winning positions, opening habits, endgame technique), each with a concrete way to practise and links to the moves involved.
 
+- **Progress dashboard**: every game you review is saved in your browser. See your accuracy trend, typical game rating, recurring problems (for example "leaving pieces en prise in 6 of your last 10 games"), accuracy by phase and how you score with each opening.
+- **Practice (puzzles from your own mistakes)**: each mistake, miss or blunder you make becomes a puzzle: find the move you missed. Puzzles use spaced repetition: solved ones come back after 1, 3, 7 and 21 days, missed ones come back tomorrow. You can filter by theme (hanging pieces, missed tactics, missed mates, king safety).
+
 Everything runs in the browser. Stockfish 19 runs as WebAssembly in a pool of web workers, so no server is needed.
 
 ## Getting started
@@ -34,11 +37,11 @@ Other scripts:
 - **Import by username** from Chess.com (public API) or Lichess. If your username matches a player, the review is shown from your side.
 - **Sample games**: a club blitz game full of instructive errors, Morphy's Opera Game and the Immortal Game.
 
-Use the **⇄ switch** in the panel header to review either player. Keyboard shortcuts: `←` `→` step through moves, `Home`/`End` jump to the start or end, `F` flips the board.
+Enter **your usernames** on the Load page (or in the extension popup) so ChessBuddy knows which side is you. That side is saved to your Progress and Practice; sample games are not. Use the **⇄ switch** in the panel header to review either player. Keyboard shortcuts: `←` `→` step through moves, `Home`/`End` jump to the start or end, `F` flips the board.
 
 ## Browser extension (Chrome, Edge, Brave)
 
-The extension adds a **Review with ChessBuddy** button to Chess.com and Lichess game pages. When a game ends, the button pulses. Clicking it collects the finished game straight from the site and opens the full review in a new tab, so you don't need to download a PGN. You can also have the review open automatically when a game ends (an option in the toolbar popup).
+The extension adds a **Review with ChessBuddy** button to Chess.com and Lichess game pages. When a game ends, the button pulses. Clicking it collects the finished game straight from the site and opens the full review in a new tab, so you don't need to download a PGN. In the toolbar popup you can choose what happens when a game ends: **save it automatically** (it is queued, and analysed and added to Progress the next time ChessBuddy is open; the toolbar badge shows how many are waiting) and/or **open the review straight away**.
 
 **Install**
 1. Build it with `npm run build:extension -- --zip`, or use a provided `chessbuddy-extension.zip`, and unzip it into a folder.
@@ -78,7 +81,7 @@ Source: `extension/` (manifest, content script, background worker, popup) and `s
 4. **Accuracy** follows the shape of lichess' per-move formula, but with a steeper decay (`ACCURACY_DECAY`), and the game accuracy is the plain average of the move scores. Both were calibrated against Chess.com's own Game Review of a real game (`tests/calibration.test.ts`): ChessBuddy gives 80.5 / 78.0 where Chess.com gives 80.6 / 76.0. The **game rating** is a rough mapping from accuracy, so treat it as an estimate.
 5. Explanations come from static exchange evaluation (hanging pieces), material swings along the engine's principal variations, and mate detection.
 
-Finished reviews are cached in `localStorage`, so reopening a recent game is instant.
+Your games, reviews and puzzles are stored in IndexedDB (`src/lib/db.ts`, `src/lib/library.ts`) in your browser only. The web version and the extension keep separate libraries, because they run on different origins.
 
 ## Project layout
 
@@ -90,6 +93,10 @@ src/
     classify.ts  move classification (pure, unit-tested)
     feedback.ts  coach text
     insights.ts  improvement plan
+    library.ts   saved games, reviews and puzzles (IndexedDB via db.ts)
+    progress.ts  dashboard aggregation
+    puzzles.ts   puzzles from your mistakes + spaced repetition
+    checkMove.ts judges "find the better move" attempts (Retry and Practice)
     scoring.ts   win %, accuracy, rating estimate
     chessUtils.ts static exchange, hanging pieces, phases
     pgn.ts / importers.ts / openings.ts / storage.ts

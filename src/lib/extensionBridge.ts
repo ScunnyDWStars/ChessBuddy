@@ -23,13 +23,34 @@ export interface ExtensionImport {
 
 interface StorageArea {
   get(keys: string | string[] | null): Promise<Record<string, unknown>>;
+  set(items: Record<string, unknown>): Promise<void>;
   remove(keys: string | string[]): Promise<void>;
 }
 
+type StorageChange = Record<string, { newValue?: unknown; oldValue?: unknown }>;
+
 interface ChromeLike {
   runtime?: { id?: string };
-  storage?: { session?: StorageArea; sync?: StorageArea };
+  storage?: {
+    session?: StorageArea;
+    sync?: StorageArea;
+    local?: StorageArea;
+    onChanged?: {
+      addListener(cb: (changes: StorageChange, area: string) => void): void;
+      removeListener(cb: (changes: StorageChange, area: string) => void): void;
+    };
+  };
+  action?: { setBadgeText(d: { text: string }): Promise<void> };
 }
+
+/** A finished game the extension saved for background analysis. */
+export interface QueuedGame {
+  id: string;
+  queuedAt: number;
+  payload: ImportPayload;
+}
+
+const QUEUE_KEY = 'pendingGames';
 
 const chromeApi = (): ChromeLike | undefined => (globalThis as { chrome?: ChromeLike }).chrome;
 
@@ -72,4 +93,33 @@ export async function takeExtensionImport(): Promise<ExtensionImport | null> {
   await session.remove(key).catch(() => {});
   history.replaceState(null, '', location.pathname);
   return { pgn: payloadToPgn(stored), perspective: stored.perspective, usernames: await savedUsernames() };
+}
+
+/** Games waiting to be analysed (saved by the extension's auto-save option). */
+export async function readQueue(): Promise<QueuedGame[]> {
+  const local = chromeApi()?.storage?.local;
+  if (!local) return [];
+  return ((await local.get(QUEUE_KEY))[QUEUE_KEY] as QueuedGame[] | undefined) ?? [];
+}
+
+export async function removeFromQueue(id: string): Promise<number> {
+  const local = chromeApi()?.storage?.local;
+  if (!local) return 0;
+  const rest = (await readQueue()).filter((g) => g.id !== id);
+  await local.set({ [QUEUE_KEY]: rest });
+  await chromeApi()
+    ?.action?.setBadgeText({ text: rest.length ? String(rest.length) : '' })
+    .catch(() => {});
+  return rest.length;
+}
+
+/** Calls `cb` whenever the extension adds games to the queue. Returns an unsubscribe function. */
+export function onQueueChanged(cb: () => void): () => void {
+  const events = chromeApi()?.storage?.onChanged;
+  if (!events) return () => {};
+  const listener = (changes: StorageChange, area: string) => {
+    if (area === 'local' && QUEUE_KEY in changes) cb();
+  };
+  events.addListener(listener);
+  return () => events.removeListener(listener);
 }
