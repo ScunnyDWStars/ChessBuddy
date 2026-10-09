@@ -39,6 +39,19 @@ Other scripts:
 
 Enter **your usernames** on the Load page (or in the extension popup) so ChessBuddy knows which side is you. That side is saved to your Progress and Practice; sample games are not. Use the **⇄ switch** in the panel header to review either player. Keyboard shortcuts: `←` `→` step through moves, `Home`/`End` jump to the start or end, `F` flips the board.
 
+## Android phone (installable app)
+
+ChessBuddy is published to **https://scunnydwstars.github.io/ChessBuddy/** by `.github/workflows/pages.yml` on every push. It is an installable web app (PWA):
+
+1. Open the address in **Chrome on Android** and tap **Install** (on the Load page, or Chrome menu ⋮ → **Install app / Add to Home screen**).
+2. Open **ChessBuddy** from your home screen. It runs full screen and works offline once installed; the service worker (`scripts/sw-template.js`, generated at build time) caches the app and the engine.
+3. On the Load page, enter your **Chess.com** and/or **Lichess** username, then use **Review my latest game** to review your most recent game in one tap.
+4. **Share to ChessBuddy:** in the Chess.com or Lichess app, open a finished game, tap **Share** and choose **ChessBuddy**. A shared link is looked up through the public Chess.com API (it can take a minute or two to appear there after the game ends) or the Lichess export API. Shared PGN text is reviewed directly.
+
+The phone keeps its own library of games and puzzles.
+
+**One-time setup for the repository owner:** Settings → Pages → Build and deployment → Source: **GitHub Actions**. Then re-run the "Deploy to GitHub Pages" workflow (Actions tab).
+
 ## Browser extension (Chrome, Edge, Brave)
 
 The extension adds a **Review with ChessBuddy** button to Chess.com and Lichess game pages. When a game ends, the button pulses. Clicking it collects the finished game straight from the site and opens the full review in a new tab, so you don't need to download a PGN. In the toolbar popup you can choose what happens when a game ends: **save it automatically** (it is queued, and analysed and added to Progress the next time ChessBuddy is open; the toolbar badge shows how many are waiting) and/or **open the review straight away**.

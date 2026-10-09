@@ -33,26 +33,47 @@ export interface GameRecord {
   plies: number;
 }
 
-const USERNAMES_KEY = 'chessbuddy:usernames';
+export interface SiteUsernames {
+  chesscom: string;
+  lichess: string;
+}
 
-/** Usernames typed on the Load page (web) — stored locally. */
-export function localUsernames(): string[] {
+const SITE_KEYS = { chesscom: 'chessbuddy:chesscomUser', lichess: 'chessbuddy:lichessUser' } as const;
+/** Earlier versions stored one comma-separated list here. */
+const LEGACY_USERNAMES_KEY = 'chessbuddy:usernames';
+
+/** Your Chess.com and Lichess usernames, as typed on the Load page (stored locally). */
+export function getSiteUsernames(): SiteUsernames {
   try {
-    return (localStorage.getItem(USERNAMES_KEY) ?? '')
-      .split(',')
-      .map((u) => u.trim())
-      .filter(Boolean);
+    const legacy = localStorage.getItem(LEGACY_USERNAMES_KEY);
+    if (legacy !== null) {
+      // Migrate: the old single field becomes the Chess.com username.
+      if (localStorage.getItem(SITE_KEYS.chesscom) === null) {
+        localStorage.setItem(SITE_KEYS.chesscom, legacy.split(',')[0]?.trim() ?? '');
+      }
+      localStorage.removeItem(LEGACY_USERNAMES_KEY);
+    }
+    return {
+      chesscom: localStorage.getItem(SITE_KEYS.chesscom)?.trim() ?? '',
+      lichess: localStorage.getItem(SITE_KEYS.lichess)?.trim() ?? '',
+    };
   } catch {
-    return [];
+    return { chesscom: '', lichess: '' };
   }
 }
 
-export function setLocalUsernames(names: string): void {
+export function setSiteUsername(site: keyof SiteUsernames, name: string): void {
   try {
-    localStorage.setItem(USERNAMES_KEY, names);
+    localStorage.setItem(SITE_KEYS[site], name.trim());
   } catch {
     /* best effort */
   }
+}
+
+/** Usernames typed on the Load page (web). */
+export function localUsernames(): string[] {
+  const { chesscom, lichess } = getSiteUsernames();
+  return [chesscom, lichess].filter(Boolean);
 }
 
 /** Every username known to be yours (web setting + extension popup). */

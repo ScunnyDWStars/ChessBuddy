@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Puzzle, PuzzleTheme } from '../lib/puzzles';
 import { THEME_LABEL } from '../lib/puzzles';
 import { CLASS_LABEL } from '../lib/feedback';
@@ -24,11 +25,14 @@ export function PracticeView({
   puzzles,
   onOpenGame,
   onLoad,
+  latest,
 }: {
   session: PracticeSession;
   puzzles: Puzzle[];
   onOpenGame: (gameKey: string, ply: number) => void;
   onLoad: () => void;
+  /** "Review my latest game" button, shown when there is nothing here yet. */
+  latest?: ReactNode;
 }) {
   const attempts = puzzles.reduce((a, p) => a + p.srs.attempts, 0);
   const correct = puzzles.reduce((a, p) => a + p.srs.correct, 0);
@@ -45,8 +49,9 @@ export function PracticeView({
             finding the move you missed. Sample games don't count.
           </div>
         </div>
-        <button className="btn-primary" onClick={onLoad}>
-          Review a game
+        {latest}
+        <button className="btn-secondary" onClick={onLoad}>
+          Load or paste a game
         </button>
       </div>
     );

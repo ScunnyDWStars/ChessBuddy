@@ -34,6 +34,11 @@ import { LoadView } from './components/LoadView';
 import { MoveList } from './components/MoveList';
 import { ProgressView } from './components/ProgressView';
 import { PracticeView } from './components/PracticeView';
+import { LatestGameButton } from './components/LatestGameButton';
+import { fetchSharedGame, parseShared, sharedFromLocation, type SharedGame } from './lib/shareImport';
+import { savedUsernames } from './lib/extensionBridge';
+import { getSiteUsernames } from './lib/library';
+import { useInstallPrompt } from './pwa';
 
 type Tab = 'review' | 'insights' | 'progress' | 'practice' | 'load';
 
@@ -65,6 +70,8 @@ export default function App() {
   const [games, setGames] = useState<GameRecord[]>([]);
   const [puzzles, setPuzzles] = useState<Puzzle[]>([]);
   const [queueProgress, setQueueProgress] = useState<{ done: number; total: number } | null>(null);
+  const [share, setShare] = useState<{ status: 'fetching' | 'error'; message?: string; game?: SharedGame } | null>(null);
+  const installPrompt = useInstallPrompt();
   const runId = useRef(0);
   const session = useRef<GameSession | null>(null);
   const depthRef = useRef(depth);
@@ -206,6 +213,36 @@ export default function App() {
     pickUp();
     window.addEventListener('hashchange', pickUp);
     return () => window.removeEventListener('hashchange', pickUp);
+  }, []);
+
+  // A game shared from the Chess.com / Lichess app (Android share sheet → ?title=&text=&url=).
+  const openShared = async (game: SharedGame) => {
+    setTab('load');
+    setShare({ status: 'fetching', game });
+    try {
+      const chesscomNames = [getSiteUsernames().chesscom, ...(await savedUsernames())].filter(Boolean);
+      const pgn = await fetchSharedGame(game, chesscomNames);
+      setShare(null);
+      await loadGame(pgn, game.kind === 'chesscom' ? game.username : undefined);
+    } catch (e) {
+      setShare({
+        status: 'error',
+        game,
+        message: e instanceof TypeError ? "Couldn't reach Chess.com or Lichess. Check your connection and try again." : (e as Error).message,
+      });
+    }
+  };
+
+  useEffect(() => {
+    const params = sharedFromLocation(location.search);
+    if (!params) return;
+    history.replaceState(null, '', location.pathname);
+    const game = parseShared(params);
+    if (game) void openShared(game);
+    else {
+      setTab('load');
+      setShare({ status: 'error', message: "That share didn't include a chess game. Share the game itself (or its PGN) from Chess.com or Lichess." });
+    }
   }, []);
 
   // Games the extension saved in the background: analyse them one by one.
@@ -441,6 +478,11 @@ export default function App() {
           </button>
         </nav>
         <div className="sidebar-foot">
+          {installPrompt.canInstall && (
+            <button className="install-btn desktop-only" onClick={() => void installPrompt.install()} title="Install ChessBuddy as an app">
+              <SideIcon d="M12 3v12M7 10l5 5 5-5M5 21h14" stroke /> Install app
+            </button>
+          )}
           <button onClick={() => setFlipped((f) => !f)} title="Flip board (F)">
             <SideIcon d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" stroke /> Flip
           </button>
@@ -487,6 +529,31 @@ export default function App() {
           )}
         </header>
 
+        {tab === 'load' && share && (
+          <div className="coach-row share-status">
+            <CoachAvatar size={56} />
+            <div className="bubble">
+              {share.status === 'fetching' ? (
+                <>Fetching the game you shared…</>
+              ) : (
+                <>
+                  {share.message}
+                  <div className="row gap" style={{ marginTop: 8 }}>
+                    {share.game && (
+                      <button className="btn-secondary" onClick={() => void openShared(share.game!)}>
+                        Try again
+                      </button>
+                    )}
+                    <button className="btn-ghost" onClick={() => setShare(null)}>
+                      Dismiss
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {tab === 'load' && (
           <LoadView
             depth={depth}
@@ -496,6 +563,7 @@ export default function App() {
             recent={recent}
             onOpenRecent={(key) => void openStored(key)}
             error={error}
+            install={installPrompt.canInstall ? installPrompt.install : undefined}
           />
         )}
 
@@ -507,11 +575,18 @@ export default function App() {
             onOpenGame={(key) => void openStored(key)}
             onPractise={practise}
             onLoad={() => setTab('load')}
+            latest={<LatestGameButton onLoad={(pgn, user) => void loadGame(pgn, user)} onNeedUsername={() => setTab('load')} />}
           />
         )}
 
         {tab === 'practice' && (
-          <PracticeView session={practice} puzzles={puzzles} onOpenGame={(key, p) => void openStored(key, p)} onLoad={() => setTab('load')} />
+          <PracticeView
+            session={practice}
+            puzzles={puzzles}
+            onOpenGame={(key, p) => void openStored(key, p)}
+            onLoad={() => setTab('load')}
+            latest={<LatestGameButton onLoad={(pgn, user) => void loadGame(pgn, user)} onNeedUsername={() => setTab('load')} />}
+          />
         )}
 
         {tab === 'insights' && review && (

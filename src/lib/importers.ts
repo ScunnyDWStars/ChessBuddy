@@ -101,3 +101,52 @@ export async function fetchLichessGames(username: string, max = 20): Promise<Rem
       pgn: g.pgn!,
     }));
 }
+
+/**
+ * Finds one Chess.com game by id in the public monthly archives of the given
+ * players (this month and last month). Returns its PGN, or null if it isn't
+ * there yet — the archive can lag a little behind the end of a game.
+ */
+export async function findChessComGame(id: string, usernames: string[], now = new Date()): Promise<string | null> {
+  const months = [now, new Date(now.getFullYear(), now.getMonth() - 1, 1)];
+  for (const user of [...new Set(usernames.map((u) => u.trim().toLowerCase()).filter(Boolean))]) {
+    for (const d of months) {
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const res = await fetch(`https://api.chess.com/pub/player/${encodeURIComponent(user)}/games/${d.getFullYear()}/${mm}`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) continue;
+      const { games } = (await res.json()) as { games?: ChessComGame[] };
+      const found = games?.find((g) => g.pgn && g.url.replace(/\/+$/, '').endsWith(`/${id}`));
+      if (found?.pgn) return found.pgn;
+    }
+  }
+  return null;
+}
+
+/** One finished Lichess game as PGN (with clock times). */
+export async function fetchLichessGame(id: string): Promise<string> {
+  const res = await fetch(`https://lichess.org/game/export/${encodeURIComponent(id)}?clocks=true&evals=false&literate=false`, {
+    headers: { Accept: 'application/x-chess-pgn' },
+  });
+  if (res.status === 404) throw new Error('Lichess could not find that game.');
+  if (!res.ok) throw new Error(`Lichess returned an error (${res.status}).`);
+  const pgn = await res.text();
+  if (/\[Result "\*"\]/.test(pgn)) throw new Error('That game is still in progress.');
+  return pgn;
+}
+
+/** Your most recent finished game across the sites you have usernames for. */
+export async function fetchLatestGame(users: { chesscom?: string; lichess?: string }): Promise<RemoteGame | null> {
+  const lookups: Promise<RemoteGame[]>[] = [];
+  if (users.chesscom?.trim()) lookups.push(fetchChessComGames(users.chesscom, 1));
+  if (users.lichess?.trim()) lookups.push(fetchLichessGames(users.lichess, 1));
+  const results = await Promise.allSettled(lookups);
+  const games = results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+  if (!games.length) {
+    const failure = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
+    if (failure) throw failure.reason;
+    return null;
+  }
+  return games.sort((a, b) => (b.endTime ?? 0) - (a.endTime ?? 0))[0];
+}

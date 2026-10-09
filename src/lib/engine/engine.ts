@@ -136,7 +136,9 @@ let sharedPool: EnginePool | null = null;
 export function getBrowserEngine(): EnginePool {
   if (!sharedPool) {
     const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 2 : 2;
-    const count = Math.max(1, Math.min(4, cores - 1));
+    // Phones with little memory get two engines so the browser doesn't kill the tab.
+    const memory = typeof navigator !== 'undefined' ? (navigator as Navigator & { deviceMemory?: number }).deviceMemory : undefined;
+    const count = Math.max(1, Math.min(memory !== undefined && memory <= 4 ? 2 : 4, cores - 1));
     sharedPool = new EnginePool(Array.from({ length: count }, () => new UciEngine(workerTransport())));
   }
   return sharedPool;

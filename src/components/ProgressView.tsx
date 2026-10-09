@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useMemo, useRef, useState } from 'react';
 import type { Phase } from '../lib/types';
 import type { GameRecord } from '../lib/library';
@@ -118,6 +119,7 @@ export function ProgressView({
   onOpenGame,
   onPractise,
   onLoad,
+  latest,
 }: {
   games: GameRecord[];
   puzzles: Puzzle[];
@@ -126,6 +128,8 @@ export function ProgressView({
   onOpenGame: (key: string) => void;
   onPractise: (themes?: PuzzleTheme[]) => void;
   onLoad: () => void;
+  /** "Review my latest game" button, shown when there is nothing here yet. */
+  latest?: ReactNode;
 }) {
   const progress = useMemo(() => buildProgress(games), [games]);
   const due = duePuzzles(puzzles).length;
@@ -147,8 +151,9 @@ export function ProgressView({
           </div>
         </div>
         {pendingNote}
-        <button className="btn-primary" onClick={onLoad}>
-          Review a game
+        {latest}
+        <button className="btn-secondary" onClick={onLoad}>
+          Load or paste a game
         </button>
       </div>
     );

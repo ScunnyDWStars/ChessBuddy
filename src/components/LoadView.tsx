@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { SAMPLE_GAMES } from '../data/samples';
 import { fetchChessComGames, fetchLichessGames, type RemoteGame } from '../lib/importers';
 import { splitPgn, parsePgn } from '../lib/pgn';
-import { localUsernames, setLocalUsernames, type GameRecord } from '../lib/library';
+import { getSiteUsernames, setSiteUsername, type GameRecord } from '../lib/library';
+import { LatestGameButton } from './LatestGameButton';
 import { CoachAvatar } from './common';
 
 export const DEPTHS = [
@@ -28,6 +29,7 @@ export function LoadView({
   recent,
   onOpenRecent,
   error,
+  install,
 }: {
   depth: number;
   onDepth: (d: number) => void;
@@ -38,12 +40,14 @@ export function LoadView({
   recent: GameRecord[];
   onOpenRecent: (key: string) => void;
   error: string | null;
+  /** Present when the browser offers to install ChessBuddy as an app. */
+  install?: () => Promise<void>;
 }) {
-  const [myNames, setMyNames] = useState(() => localUsernames().join(', '));
+  const [mine, setMine] = useState(getSiteUsernames);
   const [text, setText] = useState('');
   const [choices, setChoices] = useState<string[] | null>(null);
   const [source, setSource] = useState<'chess.com' | 'lichess'>('chess.com');
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(() => getSiteUsernames().chesscom);
   const [remote, setRemote] = useState<RemoteGame[] | null>(null);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -95,6 +99,62 @@ export function LoadView({
       </div>
 
       {error && <div className="error-box">{error}</div>}
+
+      {install && (
+        <section className="card install-card">
+          <div>
+            <h3>Install ChessBuddy</h3>
+            <p className="muted small card-hint">Get a home-screen icon, full-screen reviews and offline use.</p>
+          </div>
+          <button className="btn-secondary" onClick={() => void install()}>
+            Install
+          </button>
+        </section>
+      )}
+
+      {!choices && (
+        <LatestGameButton
+          onLoad={(pgn, user) => onLoad(pgn, user)}
+          onNeedUsername={() => {
+            const el = document.getElementById('my-chesscom');
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el?.focus();
+          }}
+        />
+      )}
+
+      {!choices && (
+        <section className="card">
+          <h3>Your usernames</h3>
+          <p className="muted small card-hint">So ChessBuddy can fetch your latest game and knows which side you played.</p>
+          <div className="username-grid">
+            <label htmlFor="my-chesscom">Chess.com</label>
+            <input
+              id="my-chesscom"
+              className="text-input"
+              placeholder="e.g. ChessManDan1888"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              value={mine.chesscom}
+              onChange={(e) => setMine({ ...mine, chesscom: e.target.value })}
+              onBlur={() => setSiteUsername('chesscom', mine.chesscom)}
+            />
+            <label htmlFor="my-lichess">Lichess</label>
+            <input
+              id="my-lichess"
+              className="text-input"
+              placeholder="optional"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              value={mine.lichess}
+              onChange={(e) => setMine({ ...mine, lichess: e.target.value })}
+              onBlur={() => setSiteUsername('lichess', mine.lichess)}
+            />
+          </div>
+        </section>
+      )}
 
       {choices ? (
         <section className="card">
@@ -193,23 +253,6 @@ export function LoadView({
                 </button>
               ))}
             </div>
-          </section>
-
-          <section className="card">
-            <h3>
-              <label htmlFor="my-usernames">Your usernames</label>
-            </h3>
-            <p className="muted small card-hint">
-              So ChessBuddy knows which side you played and can track your progress. Separate several with commas.
-            </p>
-            <input
-              id="my-usernames"
-              className="text-input full"
-              placeholder="e.g. ChessManDan1888"
-              value={myNames}
-              onChange={(e) => setMyNames(e.target.value)}
-              onBlur={() => setLocalUsernames(myNames)}
-            />
           </section>
 
           {recent.length > 0 && (

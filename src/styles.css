@@ -1861,3 +1861,63 @@ strong {
     padding: 8px 4px;
   }
 }
+
+/* ---------- Phone app ---------- */
+.latest-game {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.latest-game .btn-xl {
+  font-size: 19px;
+  padding: 14px;
+}
+
+.username-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 10px;
+  align-items: center;
+}
+
+.username-grid label {
+  font-weight: 700;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.username-grid .text-input {
+  min-width: 0;
+}
+
+.install-btn {
+  color: var(--green) !important;
+}
+
+.board {
+  touch-action: manipulation;
+}
+
+.share-status {
+  margin: 14px;
+}
+
+.install-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(129, 182, 76, 0.5);
+}
+
+.install-card h3 {
+  margin-bottom: 6px;
+}
+
+@media (max-width: 860px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
