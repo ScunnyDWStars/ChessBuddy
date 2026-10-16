@@ -42,7 +42,7 @@ export interface AnalyzeOptions {
 }
 
 /** Evaluation for positions where the game is over (no engine needed). */
-function terminalEval(fen: string): PositionEval | null {
+export function terminalEval(fen: string): PositionEval | null {
   const chess = new Chess(fen);
   if (chess.isCheckmate()) {
     const loser = chess.turn();

@@ -80,3 +80,20 @@ export function formatScore(score: Score, opts: { signed?: boolean } = {}): stri
   if (v === 0) return '0.00';
   return v > 0 ? `${signed ? '+' : ''}${s}` : `-${s}`;
 }
+
+/** Plain-words verdict for an evaluation, e.g. "White is slightly better". */
+export function describeEval(score: Score): string {
+  if (score.mate !== undefined) {
+    const side = score.cp > 0 ? 'White' : 'Black';
+    if (score.mate === 0) return `Checkmate — ${side} wins`;
+    const n = Math.abs(score.mate);
+    return `${side} mates in ${n}`;
+  }
+  const cp = Math.abs(score.cp);
+  const side = score.cp > 0 ? 'White' : 'Black';
+  if (cp < 35) return 'Equal position';
+  if (cp < 100) return `${side} is slightly better`;
+  if (cp < 250) return `${side} is better`;
+  if (cp < 500) return `${side} is much better`;
+  return `${side} is winning`;
+}

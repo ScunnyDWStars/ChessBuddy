@@ -39,8 +39,24 @@ import { fetchSharedGame, parseShared, sharedFromLocation, type SharedGame } fro
 import { savedUsernames } from './lib/extensionBridge';
 import { getSiteUsernames } from './lib/library';
 import { useInstallPrompt } from './pwa';
+import {
+  applyMove,
+  currentFen,
+  liveGameFrom,
+  loadLiveGame,
+  needsPromotion,
+  newLiveGame,
+  saveLiveGame,
+  status as liveStatusOf,
+  toPgn,
+  undo as undoLive,
+  type LiveGame,
+} from './lib/liveGame';
+import { useLiveEval } from './hooks/useLiveEval';
+import { LiveView } from './components/LiveView';
+import { PromotionPicker } from './components/PromotionPicker';
 
-type Tab = 'review' | 'insights' | 'progress' | 'practice' | 'load';
+type Tab = 'review' | 'insights' | 'progress' | 'practice' | 'live' | 'load';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const BEST_ARROW = 'rgba(129, 182, 76, 0.95)';
@@ -88,6 +104,30 @@ export default function App() {
   }, [refreshLibrary]);
 
   const practice = usePracticeSession(puzzles, () => void listPuzzles().then(setPuzzles));
+
+  // ----- Live: a game played move by move with the evaluation only (never a best move) -----
+  const [liveGame, setLiveGame] = useState<LiveGame>(() => loadLiveGame() ?? newLiveGame());
+  const [liveHidden, setLiveHidden] = useState(false);
+  const [promotion, setPromotion] = useState<{ from: string; to: string } | null>(null);
+  useEffect(() => saveLiveGame(liveGame), [liveGame]);
+  const liveFen = currentFen(liveGame);
+  const liveStatus = useMemo(() => liveStatusOf(liveGame), [liveGame]);
+  // The engine only runs while the Live tab is open.
+  const liveEval = useLiveEval(tab === 'live' ? liveFen : null);
+  const playLive = (from: string, to: string, promo?: string) => {
+    const next = applyMove(liveGame, from, to, promo);
+    if (next) setLiveGame(next);
+  };
+  const livePlaying = liveStatus.state === 'playing';
+  const liveInput = useMoveInput(tab === 'live' && livePlaying ? liveFen : null, livePlaying ? liveStatus.turn : null, (from, to) =>
+    needsPromotion(liveFen, from, to) ? setPromotion({ from, to }) : playLive(from, to),
+  );
+  // Until the new position is evaluated, keep showing the latest known evaluation.
+  const liveShown = useMemo(() => {
+    const fens = [liveGame.startFen, ...liveGame.moves.map((m) => m.fenAfter)];
+    for (let i = fens.length - 1; i >= 0; i--) if (liveEval.evals[fens[i]]) return liveEval.evals[fens[i]].score;
+    return null;
+  }, [liveGame, liveEval.evals]);
 
   const clearRetry = () => {
     setRetry(null);
@@ -293,6 +333,13 @@ export default function App() {
         e.preventDefault();
         return;
       }
+      if (tab === 'live') {
+        if ((e.key === 'z' && (e.ctrlKey || e.metaKey)) || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          setLiveGame((g) => undoLive(g));
+        }
+        return;
+      }
       if (!game || tab !== 'review') return;
       if (e.key === 'ArrowRight') selectPly(ply + 1);
       else if (e.key === 'ArrowLeft') selectPly(ply - 1);
@@ -388,8 +435,23 @@ export default function App() {
     b: { name: game?.headers.black ?? 'Black', rating: game?.headers.blackElo },
   };
   let showClocks = true;
+  let showCaptured = true;
 
-  if (tab === 'practice') {
+  if (tab === 'live') {
+    const last = liveGame.moves[liveGame.moves.length - 1];
+    boardFen = liveFen;
+    lastMove = last ? { from: last.from, to: last.to } : undefined;
+    classification = undefined;
+    animateKey = last ? `l${liveGame.moves.length}` : undefined;
+    evalScore = liveHidden ? null : liveShown;
+    boardOrientation = flipped ? 'b' : 'w';
+    selected = liveInput.selected;
+    targets = livePlaying ? liveInput.targets : [];
+    onSquareClick = livePlaying ? liveInput.onSquareClick : undefined;
+    names = { w: { name: 'White' }, b: { name: 'Black' } };
+    showClocks = false;
+    showCaptured = liveGame.startFen === START_FEN;
+  } else if (tab === 'practice') {
     const p = practice.current;
     boardFen = practice.board?.fen ?? START_FEN;
     lastMove = practice.board?.lastMove;
@@ -439,12 +501,12 @@ export default function App() {
   };
   const toMove: Color = boardFen.split(' ')[1] === 'b' ? 'b' : 'w';
   const strip = (c: Color) => (
-    <PlayerStrip name={names[c].name} rating={names[c].rating} color={c} fen={boardFen} clock={clockFor(c)} active={toMove === c} />
+    <PlayerStrip name={names[c].name} rating={names[c].rating} color={c} fen={boardFen} clock={clockFor(c)} active={toMove === c} showCaptured={showCaptured} />
   );
 
   const dueCount = useMemo(() => duePuzzles(puzzles).length, [puzzles]);
   const recent = useMemo(() => [...games].sort((a, b) => b.savedAt - a.savedAt).slice(0, 6), [games]);
-  const panelTitle = { review: 'Game Review', insights: 'Insights', progress: 'Progress', practice: 'Practice', load: 'Load Game' }[tab];
+  const panelTitle = { review: 'Game Review', insights: 'Insights', progress: 'Progress', practice: 'Practice', live: 'Live', load: 'Load Game' }[tab];
   const practise = (themes?: PuzzleTheme[]) => {
     practice.chooseThemes(themes ?? null);
     setTab('practice');
@@ -472,6 +534,9 @@ export default function App() {
           <button className={tab === 'practice' ? 'active' : ''} onClick={() => setTab('practice')}>
             <SideIcon d="M13 2L4 14h7l-1 8 9-12h-7z" /> Practice
             {dueCount > 0 && <span className="nav-badge">{dueCount}</span>}
+          </button>
+          <button className={tab === 'live' ? 'active' : ''} onClick={() => setTab('live')}>
+            <SideIcon d="M12 12h.01M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8" stroke /> Live
           </button>
           <button className={tab === 'load' ? 'active' : ''} onClick={() => setTab('load')}>
             <SideIcon d="M12 4v12M6 10l6 6 6-6M4 20h16" stroke /> Load Game
@@ -579,6 +644,30 @@ export default function App() {
           />
         )}
 
+        {tab === 'live' && (
+          <LiveView
+            game={liveGame}
+            status={liveStatus}
+            current={liveEval.current}
+            shown={liveShown}
+            evals={liveEval.evals}
+            hidden={liveHidden}
+            onToggleHidden={() => setLiveHidden((h) => !h)}
+            onUndo={() => setLiveGame((g) => undoLive(g))}
+            onNewGame={() => setLiveGame(newLiveGame())}
+            onFlip={() => setFlipped((f) => !f)}
+            onStartFrom={(text) => {
+              try {
+                setLiveGame(liveGameFrom(text));
+                return null;
+              } catch (e) {
+                return (e as Error).message;
+              }
+            }}
+            onReview={() => void loadGame(toPgn(liveGame), undefined, undefined, { record: false })}
+          />
+        )}
+
         {tab === 'practice' && (
           <PracticeView
             session={practice}
@@ -668,6 +757,16 @@ export default function App() {
           />
         )}
       </section>
+      {promotion && (
+        <PromotionPicker
+          color={livePlaying ? liveStatus.turn : 'w'}
+          onPick={(p) => {
+            playLive(promotion.from, promotion.to, p);
+            setPromotion(null);
+          }}
+          onCancel={() => setPromotion(null)}
+        />
+      )}
     </div>
   );
 }

@@ -79,7 +79,10 @@ export function PlayerStrip({
   fen,
   clock,
   active,
+  showCaptured = true,
 }: {
+  /** Off for games started from a set-up position, where "missing" pieces weren't captured. */
+  showCaptured?: boolean;
   name: string;
   rating?: string;
   color: Color;
@@ -97,10 +100,10 @@ export function PlayerStrip({
           {name} {rating && <span className="player-rating">({rating})</span>}
         </div>
         <div className="captured">
-          {pieces.map((p, i) => (
+          {showCaptured && pieces.map((p, i) => (
             <img key={i} className={`cap cap-${p}`} src={`${BASE}pieces/${capturedColor}${p.toUpperCase()}.svg`} alt="" />
           ))}
-          {lead > 0 && <span className="material-lead">+{lead}</span>}
+          {showCaptured && lead > 0 && <span className="material-lead">+{lead}</span>}
         </div>
       </div>
       {clock !== undefined && <div className={`clock ${color === 'w' ? 'clock-white' : 'clock-black'}${active ? ' active' : ''}`}>{formatClock(clock)}</div>}

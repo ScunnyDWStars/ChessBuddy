@@ -1961,3 +1961,200 @@ strong {
     padding: 12px;
   }
 }
+
+/* ---------- Live (evaluation only) ---------- */
+.live {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.live-readout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--panel-raised);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.live-score {
+  font-size: 26px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 6px;
+  min-width: 92px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.live-verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.live-verdict strong {
+  font-size: 16px;
+}
+
+.live-hidden-note {
+  flex: 1;
+  color: var(--text-3);
+  font-weight: 700;
+  font-size: 15px;
+  padding: 8px 0;
+}
+
+.live-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.live-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
+
+.live-status {
+  font-weight: 700;
+  color: var(--text-2);
+  margin: 2px 2px 10px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.live-status.check {
+  color: #ffa459;
+}
+
+.live-status.over {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.live-over {
+  background: var(--panel-raised);
+  border-left: 4px solid var(--green);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.live-over p {
+  margin: 0 0 8px;
+  color: var(--text-2);
+  line-height: 1.4;
+}
+
+.live-trend {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.live-trend svg {
+  display: block;
+  width: 100%;
+  height: 70px;
+  border-radius: 4px;
+}
+
+.live .move-list {
+  max-height: 220px;
+  margin-bottom: 12px;
+}
+
+.live-hint {
+  line-height: 1.45;
+  margin: 4px 2px 14px;
+}
+
+.live-setup summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.live-setup p {
+  margin: 8px 0;
+}
+
+.live-controls,
+.live-confirm {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.live-controls .btn-secondary {
+  flex: 1;
+  justify-content: center;
+  padding: 12px 10px;
+}
+
+.live-confirm span {
+  flex: 1;
+  font-weight: 700;
+}
+
+.promo-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.promo-box {
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.promo-title {
+  font-weight: 800;
+}
+
+.promo-pieces {
+  display: flex;
+  gap: 8px;
+}
+
+.promo-piece {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  background: var(--light-sq);
+  display: grid;
+  place-items: center;
+}
+
+.promo-piece:hover,
+.promo-piece:focus-visible {
+  background: #f5f682;
+  outline: none;
+}
+
+.promo-piece img {
+  width: 54px;
+  height: 54px;
+}

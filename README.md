@@ -10,6 +10,7 @@ An engine-powered chess game review in the style of chess.com's **Game Review**.
 
 - **Progress dashboard**: every game you review is saved in your browser. See your accuracy trend, typical game rating, recurring problems (for example "leaving pieces en prise in 6 of your last 10 games"), accuracy by phase and how you score with each opening.
 - **Practice (puzzles from your own mistakes)**: each mistake, miss or blunder you make becomes a puzzle: find the move you missed. Puzzles use spaced repetition: solved ones come back after 1, 3, 7 and 21 days, missed ones come back tomorrow. You can filter by theme (hanging pieces, missed tactics, missed mates, king safety).
+- **Live (evaluation only)**: play a game move by move on the board (both sides, for example over-the-board or in a lesson) and watch an evaluation bar and score update after every move, with a plain-words verdict ("White is slightly better") and an evaluation-over-time chart. The Live tab never shows a best move, engine line or arrow: the evaluator (`src/lib/liveEval.ts`) passes on only the score. You can hide the evaluation, undo moves, start from a FEN or PGN, and open the full review once the game is over. This is meant for your own games and lessons, not for games in progress on Chess.com or Lichess.
 
 Everything runs in the browser. Stockfish 19 runs as WebAssembly in a pool of web workers, so no server is needed.
 
@@ -110,6 +111,8 @@ src/
     progress.ts  dashboard aggregation
     puzzles.ts   puzzles from your mistakes + spaced repetition
     checkMove.ts judges "find the better move" attempts (Retry and Practice)
+    liveGame.ts  the Live board's game (moves, undo, results, PGN)
+    liveEval.ts  evaluation-only engine feed for the Live tab
     scoring.ts   win %, accuracy, rating estimate
     chessUtils.ts static exchange, hanging pieces, phases
     pgn.ts / importers.ts / openings.ts / storage.ts
